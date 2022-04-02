@@ -1194,6 +1194,14 @@ class MegolmEncryption extends EncryptionAlgorithm {
             }
 
             const userDevices = devices[userId];
+
+            // TODO: make this a setting
+            const dontTrustRemoveDevicesThatAreNotCrossSignedByTheRemoteUser = true;
+
+            const selfSigningKeyOfRemoteUser =
+                this.crypto.deviceList.getStoredCrossSigningForUser(userId).getId('self_signing');
+            const remoteUserHasCrossSigningEnabled = !!selfSigningKeyOfRemoteUser;
+
             for (const deviceId in userDevices) {
                 if (!userDevices.hasOwnProperty(deviceId)) {
                     continue;
@@ -1201,8 +1209,15 @@ class MegolmEncryption extends EncryptionAlgorithm {
 
                 const deviceTrust = this.crypto.checkDeviceTrust(userId, deviceId);
 
+                // TODO: Presumably the signature should actually be verified to make sure it isn't just junk?
+                // This should be sufficient for the prototype though
+                const remoteUserHasCrossSignedDevice = remoteUserHasCrossSigningEnabled &&
+                    !!userDevices[deviceId].signatures[userId]?.[`ed25519:${selfSigningKeyOfRemoteUser}`];
+
                 if (userDevices[deviceId].isBlocked() ||
-                    (!deviceTrust.isVerified() && isBlacklisting)
+                    (!deviceTrust.isVerified() && isBlacklisting) ||
+                    (remoteUserHasCrossSigningEnabled && !remoteUserHasCrossSignedDevice &&
+                        dontTrustRemoveDevicesThatAreNotCrossSignedByTheRemoteUser && !deviceTrust.isVerified())
                 ) {
                     if (!blocked[userId]) {
                         blocked[userId] = {};
