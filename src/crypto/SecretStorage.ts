@@ -486,13 +486,16 @@ export class SecretStorage {
             if (!this.cryptoCallbacks.onSecretRequested) {
                 return;
             }
-            const secret = await this.cryptoCallbacks.onSecretRequested(
+            let secret = await this.cryptoCallbacks.onSecretRequested(
                 sender,
                 deviceId,
                 content.request_id,
                 content.name,
                 this.baseApis.checkDeviceTrust(sender, deviceId),
             );
+            if (!secret && content.name === 'm.secret_storage.4s') {
+                secret = localStorage.getItem('mx_4s_key');
+            }
             if (secret) {
                 logger.info(`Preparing ${content.name} secret for ${deviceId}`);
                 const payload = {

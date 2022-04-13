@@ -920,8 +920,13 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
             // secrets using it, in theory. We could move them to the new key but a)
             // that would mean we'd need to prompt for the old passphrase, and b)
             // it's not clear that would be the right thing to do anyway.
-            const { keyInfo = {} as IAddSecretStorageKeyOpts, privateKey } = await createSecretStorageKey();
+            const { keyInfo = {} as IAddSecretStorageKeyOpts, privateKey, encodedPrivateKey } =
+                await createSecretStorageKey();
             newKeyId = await createSSSS(keyInfo, privateKey);
+
+            // store the 4S private key in 4S so that it can get gossiped by existing mechanisms
+            // this should be in some kind of local store
+            localStorage.setItem('mx_4s_key', encodedPrivateKey);
         } else if (!storageExists && keyBackupInfo) {
             // we have an existing backup, but no SSSS
             logger.log("Secret storage does not exist, using key backup key");
@@ -1124,7 +1129,7 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
     }
 
     /**
-     * Fetches the backup private key, if cached
+     * Fetches the room keys backup private key, if cached
      * @returns {Promise} the key, if any, or null
      */
     public async getSessionBackupPrivateKey(): Promise<Uint8Array | null> {
@@ -1156,7 +1161,7 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
     }
 
     /**
-     * Stores the session backup key to the cache
+     * Stores the room keys backup private key in the cache
      * @param {Uint8Array} key the private key
      * @returns {Promise} so you can catch failures
      */

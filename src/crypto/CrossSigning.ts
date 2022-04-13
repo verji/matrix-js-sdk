@@ -26,13 +26,13 @@ import { logger } from '../logger';
 import { IndexedDBCryptoStore } from '../crypto/store/indexeddb-crypto-store';
 import { decryptAES, encryptAES } from './aes';
 import { DeviceInfo } from "./deviceinfo";
-import { SecretStorage } from "./SecretStorage";
+import { SecretStorage, SECRET_STORAGE_ALGORITHM_V1_AES } from "./SecretStorage";
 import { ICrossSigningKey, ISignedKey, MatrixClient } from "../client";
 import { OlmDevice } from "./OlmDevice";
 import { ICryptoCallbacks } from "../matrix";
 import { ISignatures } from "../@types/signed";
 import { CryptoStore } from "./store/base";
-import { ISecretStorageKeyInfo } from "./api";
+import { IAddSecretStorageKeyOpts, ISecretStorageKeyInfo } from "./api";
 
 const KEY_REQUEST_TIMEOUT_MS = 1000 * 60;
 
@@ -737,7 +737,7 @@ export function createCryptoStoreCacheCallbacks(store: CryptoStore, olmDevice: O
     };
 }
 
-export type KeysDuringVerification = [[string, PkSigning], [string, PkSigning], [string, PkSigning], void];
+export type KeysDuringVerification = [[string, PkSigning], [string, PkSigning], [string, PkSigning], void, void];
 
 /**
  * Request cross-signing keys from another device during verification.
@@ -817,6 +817,29 @@ export function requestKeysDuringVerification(
             }
         })();
 
+        // also request and cache the 4S key
+        const ssssKeyPromise = (async () => {
+            // const cachedKey = await client.crypto.getSecret('m.secret_storage.4s');
+            // if (!cachedKey) {
+            logger.info("No cached 4S key found. Requesting...");
+            const secretReq = client.requestSecret(
+                'm.secret_storage.4s', [deviceId],
+            );
+            const base64Key = await secretReq.promise;
+            logger.info("Received 4S private key, decoding...");
+            const decodedKey = decodeBase64(base64Key);
+            logger.info("Decoded 4S key, storing...");
+
+            // make key available for local use
+            await client.crypto.secretStorage.addKey(
+                SECRET_STORAGE_ALGORITHM_V1_AES,
+                { key: Uint8Array.from(decodedKey) } as IAddSecretStorageKeyOpts,
+            );
+
+            // again this should be stored somewhere more sensible
+            localStorage.setItem('mx_4s_key', base64Key);
+        })();
+
         // We call getCrossSigningKey() for its side-effects
         return Promise.race<KeysDuringVerification | void>([
             Promise.all([
@@ -824,6 +847,7 @@ export function requestKeysDuringVerification(
                 crossSigning.getCrossSigningKey("self_signing"),
                 crossSigning.getCrossSigningKey("user_signing"),
                 backupKeyPromise,
+                ssssKeyPromise,
             ]) as Promise<KeysDuringVerification>,
             timeout,
         ]).then(resolve, reject);
