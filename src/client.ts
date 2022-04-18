@@ -2198,6 +2198,20 @@ export class MatrixClient extends TypedEventEmitter<EmittedEvents, ClientEventHa
         return this.crypto.setCryptoTrustCrossSignedDevices(val);
     }
 
+    public setTrustDevicesThatAreNotCrossSignedByTheRecipient(val: boolean): void {
+        if (!this.crypto) {
+            throw new Error("End-to-end encryption disabled");
+        }
+        this.crypto.setTrustDevicesThatAreNotCrossSignedByTheRecipient(val);
+    }
+
+    public getTrustDevicesThatAreNotCrossSignedByTheRecipient(): boolean {
+        if (!this.crypto) {
+            throw new Error("End-to-end encryption disabled");
+        }
+        return this.crypto.getTrustDevicesThatAreNotCrossSignedByTheRecipient();
+    }
+
     /**
      * Counts the number of end to end session keys that are waiting to be backed up
      * @returns {Promise<int>} Resolves to the number of sessions requiring backup

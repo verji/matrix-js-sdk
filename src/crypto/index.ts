@@ -263,6 +263,7 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
     public readonly inRoomVerificationRequests: InRoomRequests;
 
     private trustCrossSignedDevices = true;
+    private trustDevicesThatAreNotCrossSignedByTheRecipient = true;
     // the last time we did a check for the number of one-time-keys on the server.
     private lastOneTimeKeyCheck: number = null;
     private oneTimeKeyCheckInProgress = false;
@@ -546,6 +547,14 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
                 }
             }
         }
+    }
+
+    public setTrustDevicesThatAreNotCrossSignedByTheRecipient(val: boolean): void {
+        this.trustDevicesThatAreNotCrossSignedByTheRecipient = val;
+    }
+
+    public getTrustDevicesThatAreNotCrossSignedByTheRecipient(): boolean {
+        return this.trustDevicesThatAreNotCrossSignedByTheRecipient;
     }
 
     /**

@@ -1196,7 +1196,8 @@ class MegolmEncryption extends EncryptionAlgorithm {
             const userDevices = devices[userId];
 
             // TODO: make this a setting
-            const dontTrustRemoveDevicesThatAreNotCrossSignedByTheRemoteUser = true;
+            const dontTrustRemoteDevicesThatAreNotCrossSignedByTheRemoteUser =
+                !this.crypto.getTrustDevicesThatAreNotCrossSignedByTheRecipient();
 
             const selfSigningKeyOfRemoteUser =
                 this.crypto.deviceList.getStoredCrossSigningForUser(userId).getId('self_signing');
@@ -1217,7 +1218,7 @@ class MegolmEncryption extends EncryptionAlgorithm {
                 if (userDevices[deviceId].isBlocked() ||
                     (!deviceTrust.isVerified() && isBlacklisting) ||
                     (remoteUserHasCrossSigningEnabled && !remoteUserHasCrossSignedDevice &&
-                        dontTrustRemoveDevicesThatAreNotCrossSignedByTheRemoteUser && !deviceTrust.isVerified())
+                        dontTrustRemoteDevicesThatAreNotCrossSignedByTheRemoteUser && !deviceTrust.isVerified())
                 ) {
                     if (!blocked[userId]) {
                         blocked[userId] = {};
