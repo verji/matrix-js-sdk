@@ -1195,7 +1195,6 @@ class MegolmEncryption extends EncryptionAlgorithm {
 
             const userDevices = devices[userId];
 
-            // TODO: make this a setting
             const dontTrustRemoteDevicesThatAreNotCrossSignedByTheRemoteUser =
                 !this.crypto.getTrustDevicesThatAreNotCrossSignedByTheRecipient();
 
