@@ -1612,16 +1612,6 @@ export class Room extends TypedEventEmitter<EmittedEvents, RoomEventHandlerMap> 
             };
         }
 
-        // A reply directly to a thread response is shown as part of the thread only, this is to provide a better
-        // experience when communicating with users using clients without full threads support
-        if (parentEvent?.isThreadRelation) {
-            return {
-                shouldLiveInRoom: false,
-                shouldLiveInThread: true,
-                threadId: parentEvent.threadRootId,
-            };
-        }
-
         // We've exhausted all scenarios, can safely assume that this event should live in the room timeline only
         return {
             shouldLiveInRoom: true,
@@ -1701,11 +1691,13 @@ export class Room extends TypedEventEmitter<EmittedEvents, RoomEventHandlerMap> 
 
         const eventsByThread: { [threadId: string]: MatrixEvent[] } = {};
         for (const event of events) {
-            const { threadId } = this.eventShouldLiveIn(event);
-            if (!eventsByThread[threadId]) {
-                eventsByThread[threadId] = [];
+            const { threadId, shouldLiveInThread } = this.eventShouldLiveIn(event);
+            if (shouldLiveInThread) {
+                if (!eventsByThread[threadId]) {
+                    eventsByThread[threadId] = [];
+                }
+                eventsByThread[threadId].push(event);
             }
-            eventsByThread[threadId].push(event);
         }
 
         return Promise.all(Object.entries(eventsByThread).map(([threadId, events]) => (
