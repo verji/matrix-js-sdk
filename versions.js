@@ -31,5 +31,4 @@ export const DOC_VERSIONS = [
 	'v19.0',
 	'v18.1',
 	'v18.0',
-	'dev',
 ];
