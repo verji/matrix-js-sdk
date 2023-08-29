@@ -2,7 +2,6 @@
 export const DOC_VERSIONS = [
 	'stable',
 	'v28.0',
-	'v27.3',
 	'v27.2',
 	'v27.1',
 	'v27.0',
@@ -33,5 +32,4 @@ export const DOC_VERSIONS = [
 	'v19.2',
 	'v19.1',
 	'v19.0',
-	'dev',
 ];
