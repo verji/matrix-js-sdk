@@ -20,7 +20,7 @@ limitations under the License.
 
 import fetchMock from "fetch-mock-jest";
 import { mocked } from "jest-mock";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 import { Method } from "../../../src";
 import * as crypto from "../../../src/crypto/crypto";
