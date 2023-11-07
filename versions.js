@@ -27,5 +27,4 @@ export const DOC_VERSIONS = [
 	'v21.2',
 	'v21.1',
 	'v21.0',
-	'dev',
 ];
