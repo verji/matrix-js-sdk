@@ -401,17 +401,18 @@ export class SyncApi {
      * Peek into a room. This will result in the room in question being synced so it
      * is accessible via getRooms(). Live updates for the room will be provided.
      * @param roomId - The room ID to peek into.
+     * @param limit - The number of timeline events to initially retrieve.
      * @returns A promise which resolves once the room has been added to the
      * store.
      */
-    public peek(roomId: string): Promise<Room> {
+    public peek(roomId: string, limit: number = 20): Promise<Room> {
         if (this._peekRoom?.roomId === roomId) {
             return Promise.resolve(this._peekRoom);
         }
 
         const client = this.client;
         this._peekRoom = this.createRoom(roomId);
-        return this.client.roomInitialSync(roomId, 20).then((response) => {
+        return this.client.roomInitialSync(roomId, limit).then((response) => {
             if (this._peekRoom?.roomId !== roomId) {
                 throw new Error("Peeking aborted");
             }
@@ -1402,7 +1403,9 @@ export class SyncApi {
                 if (limited) {
                     room.resetLiveTimeline(
                         joinObj.timeline.prev_batch,
-                        this.syncOpts.canResetEntireTimeline!(room.roomId) ? null : syncEventData.oldSyncToken ?? null,
+                        this.syncOpts.canResetEntireTimeline!(room.roomId)
+                            ? null
+                            : (syncEventData.oldSyncToken ?? null),
                     );
 
                     // We have to assume any gap in any timeline is
