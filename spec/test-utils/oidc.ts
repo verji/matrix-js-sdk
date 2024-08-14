@@ -38,10 +38,7 @@ export const makeDelegatedAuthConfig = (issuer = "https://auth.org/"): OidcClien
  * @param issuer used as the base for all other urls
  * @returns ValidatedIssuerMetadata
  */
-export const mockOpenIdConfiguration = (
-    issuer = "https://auth.org/",
-    additionalGrantTypes: string[] = [],
-): ValidatedIssuerMetadata => ({
+export const mockOpenIdConfiguration = (issuer = "https://auth.org/"): ValidatedIssuerMetadata => ({
     issuer,
     revocation_endpoint: issuer + "revoke",
     token_endpoint: issuer + "token",
@@ -50,6 +47,6 @@ export const mockOpenIdConfiguration = (
     device_authorization_endpoint: issuer + "device",
     jwks_uri: issuer + "jwks",
     response_types_supported: ["code"],
-    grant_types_supported: ["authorization_code", "refresh_token", ...additionalGrantTypes],
+    grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
 });

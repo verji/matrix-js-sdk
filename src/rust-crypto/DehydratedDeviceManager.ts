@@ -21,6 +21,7 @@ import { encodeUri } from "../utils";
 import { IHttpOpts, MatrixError, MatrixHttpApi, Method } from "../http-api";
 import { IToDeviceEvent } from "../sync-accumulator";
 import { ServerSideSecretStorage } from "../secret-storage";
+import { crypto } from "../crypto/crypto";
 import { decodeBase64, encodeUnpaddedBase64 } from "../base64";
 import { Logger } from "../logger";
 
@@ -154,7 +155,7 @@ export class DehydratedDeviceManager {
      */
     public async resetKey(): Promise<void> {
         const key = new Uint8Array(32);
-        globalThis.crypto.getRandomValues(key);
+        crypto.getRandomValues(key);
         await this.secretStorage.store(SECRET_STORAGE_NAME, encodeUnpaddedBase64(key));
         this.key = key;
     }

@@ -857,7 +857,7 @@ describe("AutoDiscovery", function () {
                 const expected = {
                     "m.homeserver": {
                         state: AutoDiscoveryAction.FAIL_ERROR,
-                        error: AutoDiscovery.ERROR_UNSUPPORTED_HOMESERVER_SPEC_VERSION,
+                        error: AutoDiscovery.ERROR_HOMESERVER_TOO_OLD,
                         base_url: "https://example.org",
                     },
                     "m.identity_server": {

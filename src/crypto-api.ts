@@ -14,16 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { SecretsBundle } from "@matrix-org/matrix-sdk-crypto-wasm";
-import type { IMegolmSessionData } from "../@types/crypto";
-import { Room } from "../models/room";
-import { DeviceMap } from "../models/device";
-import { UIAuthCallback } from "../interactive-auth";
-import { PassphraseInfo, SecretStorageCallbacks, SecretStorageKeyDescription } from "../secret-storage";
-import { VerificationRequest } from "./verification";
-import { BackupTrustInfo, KeyBackupCheck, KeyBackupInfo } from "./keybackup";
-import { ISignatures } from "../@types/signed";
-import { MatrixEvent } from "../models/event";
+import type { IMegolmSessionData } from "./@types/crypto";
+import { Room } from "./models/room";
+import { DeviceMap } from "./models/device";
+import { UIAuthCallback } from "./interactive-auth";
+import { PassphraseInfo, SecretStorageCallbacks, SecretStorageKeyDescription } from "./secret-storage";
+import { VerificationRequest } from "./crypto-api/verification";
+import { BackupTrustInfo, KeyBackupCheck, KeyBackupInfo } from "./crypto-api/keybackup";
+import { ISignatures } from "./@types/signed";
+import { MatrixEvent } from "./models/event";
 
 /**
  * Public interface to the cryptography parts of the js-sdk
@@ -533,35 +532,12 @@ export interface CryptoApi {
      *   to false.
      */
     startDehydration(createNewKey?: boolean): Promise<void>;
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //
-    // Import/export of secret keys
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Export secrets bundle for transmitting to another device as part of OIDC QR login
-     */
-    exportSecretsBundle?(): Promise<Awaited<ReturnType<SecretsBundle["to_json"]>>>;
-
-    /**
-     * Import secrets bundle transmitted from another device.
-     * @param secrets - The secrets bundle received from the other device
-     */
-    importSecretsBundle?(secrets: Awaited<ReturnType<SecretsBundle["to_json"]>>): Promise<void>;
 }
 
 /** A reason code for a failure to decrypt an event. */
 export enum DecryptionFailureCode {
     /** Message was encrypted with a Megolm session whose keys have not been shared with us. */
     MEGOLM_UNKNOWN_INBOUND_SESSION_ID = "MEGOLM_UNKNOWN_INBOUND_SESSION_ID",
-
-    /** A special case of {@link MEGOLM_UNKNOWN_INBOUND_SESSION_ID}: the sender has told us it is withholding the key. */
-    MEGOLM_KEY_WITHHELD = "MEGOLM_KEY_WITHHELD",
-
-    /** A special case of {@link MEGOLM_KEY_WITHHELD}: the sender has told us it is withholding the key, because the current device is unverified. */
-    MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE = "MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE",
 
     /** Message was encrypted with a Megolm session which has been shared with us, but in a later ratchet state. */
     OLM_UNKNOWN_MESSAGE_INDEX = "OLM_UNKNOWN_MESSAGE_INDEX",
@@ -854,14 +830,9 @@ export interface CreateSecretStorageOpts {
     setupNewSecretStorage?: boolean;
 
     /**
-     * Function called to get the user's current key backup passphrase.
-     *
-     * Should return a promise that resolves with a Uint8Array
+     * Function called to get the user's
+     * current key backup passphrase. Should return a promise that resolves with a Uint8Array
      * containing the key, or rejects if the key cannot be obtained.
-     *
-     * Only used when the client has existing key backup, but no secret storage.
-     *
-     * @deprecated Not used by the Rust crypto stack.
      */
     getKeyBackupPassphrase?: () => Promise<Uint8Array>;
 }
@@ -960,5 +931,5 @@ export interface OwnDeviceKeys {
     curve25519: string;
 }
 
-export * from "./verification";
-export * from "./keybackup";
+export * from "./crypto-api/verification";
+export * from "./crypto-api/keybackup";

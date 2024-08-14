@@ -16,19 +16,18 @@ limitations under the License.
 
 import { IdTokenClaims, Log, OidcClient, SigninResponse, SigninState, WebStorageStateStore } from "oidc-client-ts";
 
+import { subtleCrypto, TextEncoder } from "../crypto/crypto";
 import { logger } from "../logger";
 import { randomString } from "../randomstring";
 import { OidcError } from "./error";
 import {
-    BearerTokenResponse,
-    UserState,
-    validateBearerTokenResponse,
-    ValidatedIssuerMetadata,
     validateIdToken,
+    ValidatedIssuerMetadata,
     validateStoredUserState,
+    UserState,
+    BearerTokenResponse,
+    validateBearerTokenResponse,
 } from "./validate";
-import { sha256 } from "../digest";
-import { encodeUnpaddedBase64Url } from "../base64";
 
 // reexport for backwards compatibility
 export type { BearerTokenResponse };
@@ -58,14 +57,19 @@ export const generateScope = (deviceId?: string): string => {
 
 // https://www.rfc-editor.org/rfc/rfc7636
 const generateCodeChallenge = async (codeVerifier: string): Promise<string> => {
-    if (!globalThis.crypto.subtle) {
+    if (!subtleCrypto) {
         // @TODO(kerrya) should this be allowed? configurable?
         logger.warn("A secure context is required to generate code challenge. Using plain text code challenge");
         return codeVerifier;
     }
+    const utf8 = new TextEncoder().encode(codeVerifier);
 
-    const hashBuffer = await sha256(codeVerifier);
-    return encodeUnpaddedBase64Url(hashBuffer);
+    const digest = await subtleCrypto.digest("SHA-256", utf8);
+
+    return btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/=/g, "")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_");
 };
 
 /**

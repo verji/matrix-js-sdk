@@ -21,5 +21,4 @@ limitations under the License.
  */
 export interface Focus {
     type: string;
-    [key: string]: unknown;
 }

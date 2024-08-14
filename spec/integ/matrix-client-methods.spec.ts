@@ -257,7 +257,7 @@ describe("MatrixClient", function () {
                 .when("POST", "/knock/" + encodeURIComponent(roomId))
                 .check((request) => {
                     expect(request.data).toEqual({ reason: opts.reason });
-                    expect(request.queryParams).toEqual({ server_name: opts.viaServers, via: opts.viaServers });
+                    expect(request.queryParams).toEqual({ server_name: opts.viaServers });
                 })
                 .respond(200, { room_id: roomId });
 
@@ -1293,109 +1293,18 @@ describe("MatrixClient", function () {
     });
 
     describe("getCapabilities", () => {
-        it("should return cached capabilities if present", async () => {
-            const capsObject = {
-                "m.change_password": false,
-            };
-
-            httpBackend!.when("GET", "/versions").respond(200, {});
-            httpBackend!.when("GET", "/pushrules").respond(200, {});
-            httpBackend!.when("POST", "/filter").respond(200, { filter_id: "a filter id" });
+        it("should cache by default", async () => {
             httpBackend.when("GET", "/capabilities").respond(200, {
-                capabilities: capsObject,
+                capabilities: {
+                    "m.change_password": false,
+                },
             });
-
-            client.startClient();
-            await httpBackend!.flushAllExpected();
-
-            expect(await client.getCapabilities()).toEqual(capsObject);
-        });
-
-        it("should fetch capabilities if cache not present", async () => {
-            const capsObject = {
-                "m.change_password": false,
-            };
-
-            httpBackend.when("GET", "/capabilities").respond(200, {
-                capabilities: capsObject,
-            });
-
-            const capsPromise = client.getCapabilities();
-            await httpBackend!.flushAllExpected();
-
-            expect(await capsPromise).toEqual(capsObject);
-        });
-    });
-
-    describe("getCachedCapabilities", () => {
-        it("should return cached capabilities or undefined", async () => {
-            const capsObject = {
-                "m.change_password": false,
-            };
-
-            httpBackend!.when("GET", "/versions").respond(200, {});
-            httpBackend!.when("GET", "/pushrules").respond(200, {});
-            httpBackend!.when("POST", "/filter").respond(200, { filter_id: "a filter id" });
-            httpBackend.when("GET", "/capabilities").respond(200, {
-                capabilities: capsObject,
-            });
-
-            expect(client.getCachedCapabilities()).toBeUndefined();
-
-            client.startClient();
-
-            await httpBackend!.flushAllExpected();
-
-            expect(client.getCachedCapabilities()).toEqual(capsObject);
-        });
-    });
-
-    describe("fetchCapabilities", () => {
-        const capsObject = {
-            "m.change_password": false,
-        };
-
-        beforeEach(() => {
-            httpBackend.when("GET", "/capabilities").respond(200, {
-                capabilities: capsObject,
-            });
-        });
-
-        afterEach(() => {
-            jest.useRealTimers();
-        });
-
-        it("should always fetch capabilities and then cache", async () => {
-            const prom = client.fetchCapabilities();
-            await httpBackend.flushAllExpected();
-            const caps = await prom;
-
-            expect(caps).toEqual(capsObject);
-        });
-
-        it("should write-through the cache", async () => {
-            httpBackend!.when("GET", "/versions").respond(200, {});
-            httpBackend!.when("GET", "/pushrules").respond(200, {});
-            httpBackend!.when("POST", "/filter").respond(200, { filter_id: "a filter id" });
-
-            client.startClient();
-            await httpBackend!.flushAllExpected();
-
-            expect(client.getCachedCapabilities()).toEqual(capsObject);
-
-            const newCapsObject = {
-                "m.change_password": true,
-            };
-
-            httpBackend.when("GET", "/capabilities").respond(200, {
-                capabilities: newCapsObject,
-            });
-
-            const prom = client.fetchCapabilities();
-            await httpBackend.flushAllExpected();
+            const prom = httpBackend.flushAllExpected();
+            const capabilities1 = await client.getCapabilities();
+            const capabilities2 = await client.getCapabilities();
             await prom;
 
-            expect(client.getCachedCapabilities()).toEqual(newCapsObject);
+            expect(capabilities1).toStrictEqual(capabilities2);
         });
     });
 
@@ -1916,6 +1825,7 @@ function withThreadId(event: MatrixEvent, newThreadId: string): MatrixEvent {
 
 const buildEventMessageInThread = (root: MatrixEvent) =>
     new MatrixEvent({
+        age: 80098509,
         content: {
             "algorithm": "m.megolm.v1.aes-sha2",
             "ciphertext": "ENCRYPTEDSTUFF",
@@ -1936,10 +1846,12 @@ const buildEventMessageInThread = (root: MatrixEvent) =>
         sender: "@andybalaam-test1:matrix.org",
         type: "m.room.encrypted",
         unsigned: { age: 80098509 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventPollResponseReference = () =>
     new MatrixEvent({
+        age: 80098509,
         content: {
             "algorithm": "m.megolm.v1.aes-sha2",
             "ciphertext": "ENCRYPTEDSTUFF",
@@ -1957,6 +1869,7 @@ const buildEventPollResponseReference = () =>
         sender: "@andybalaam-test1:matrix.org",
         type: "m.room.encrypted",
         unsigned: { age: 80106237 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventReaction = (event: MatrixEvent) =>
@@ -1996,6 +1909,7 @@ const buildEventRedaction = (event: MatrixEvent) =>
 
 const buildEventPollStartThreadRoot = () =>
     new MatrixEvent({
+        age: 80108647,
         content: {
             algorithm: "m.megolm.v1.aes-sha2",
             ciphertext: "ENCRYPTEDSTUFF",
@@ -2009,10 +1923,12 @@ const buildEventPollStartThreadRoot = () =>
         sender: "@andybalaam-test1:matrix.org",
         type: "m.room.encrypted",
         unsigned: { age: 80108647 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventReply = (target: MatrixEvent) =>
     new MatrixEvent({
+        age: 80098509,
         content: {
             "algorithm": "m.megolm.v1.aes-sha2",
             "ciphertext": "ENCRYPTEDSTUFF",
@@ -2031,10 +1947,12 @@ const buildEventReply = (target: MatrixEvent) =>
         sender: "@andybalaam-test1:matrix.org",
         type: "m.room.encrypted",
         unsigned: { age: 80098509 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventRoomName = () =>
     new MatrixEvent({
+        age: 80123249,
         content: {
             name: "1 poll, 1 vote, 1 thread",
         },
@@ -2045,10 +1963,12 @@ const buildEventRoomName = () =>
         state_key: "",
         type: "m.room.name",
         unsigned: { age: 80123249 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventEncryption = () =>
     new MatrixEvent({
+        age: 80123383,
         content: {
             algorithm: "m.megolm.v1.aes-sha2",
         },
@@ -2059,10 +1979,12 @@ const buildEventEncryption = () =>
         state_key: "",
         type: "m.room.encryption",
         unsigned: { age: 80123383 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventGuestAccess = () =>
     new MatrixEvent({
+        age: 80123473,
         content: {
             guest_access: "can_join",
         },
@@ -2073,10 +1995,12 @@ const buildEventGuestAccess = () =>
         state_key: "",
         type: "m.room.guest_access",
         unsigned: { age: 80123473 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventHistoryVisibility = () =>
     new MatrixEvent({
+        age: 80123556,
         content: {
             history_visibility: "shared",
         },
@@ -2087,10 +2011,12 @@ const buildEventHistoryVisibility = () =>
         state_key: "",
         type: "m.room.history_visibility",
         unsigned: { age: 80123556 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventJoinRules = () =>
     new MatrixEvent({
+        age: 80123696,
         content: {
             join_rule: KnownMembership.Invite,
         },
@@ -2101,10 +2027,12 @@ const buildEventJoinRules = () =>
         state_key: "",
         type: "m.room.join_rules",
         unsigned: { age: 80123696 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventPowerLevels = () =>
     new MatrixEvent({
+        age: 80124105,
         content: {
             ban: 50,
             events: {
@@ -2135,10 +2063,12 @@ const buildEventPowerLevels = () =>
         state_key: "",
         type: "m.room.power_levels",
         unsigned: { age: 80124105 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventMember = () =>
     new MatrixEvent({
+        age: 80125279,
         content: {
             avatar_url: "mxc://matrix.org/aNtbVcFfwotudypZcHsIcPOc",
             displayname: "andybalaam-test1",
@@ -2151,10 +2081,12 @@ const buildEventMember = () =>
         state_key: "@andybalaam-test1:matrix.org",
         type: "m.room.member",
         unsigned: { age: 80125279 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 const buildEventCreate = () =>
     new MatrixEvent({
+        age: 80126105,
         content: {
             room_version: "6",
         },
@@ -2165,6 +2097,7 @@ const buildEventCreate = () =>
         state_key: "",
         type: "m.room.create",
         unsigned: { age: 80126105 },
+        user_id: "@andybalaam-test1:matrix.org",
     });
 
 function assertObjectContains(obj: Record<string, any>, expected: any): void {

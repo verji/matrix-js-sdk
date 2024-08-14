@@ -50,18 +50,17 @@ describe.each(["browser", "node"])("Base64 encoding (%s)", (env) => {
     });
 
     it("Should encode unpadded URL-safe base64", () => {
-        // Chosen to have padding and multiple instances of / and + in the base64
-        const toEncode = "???????⊕⊗⊗";
+        const toEncode = "?????";
         const data = new TextEncoder().encode(toEncode);
 
         const encoded = encodeUnpaddedBase64Url(data);
-        expect(encoded).toEqual("Pz8_Pz8_P-KKleKKl-KKlw");
+        expect(encoded).toEqual("Pz8_Pz8");
     });
 
     it("Should decode URL-safe base64", () => {
-        const decoded = new TextDecoder().decode(decodeBase64("Pz8_Pz8_P-KKleKKl-KKlw=="));
+        const decoded = new TextDecoder().decode(decodeBase64("Pz8_Pz8="));
 
-        expect(decoded).toStrictEqual("???????⊕⊗⊗");
+        expect(decoded).toStrictEqual("?????");
     });
 
     it("Encode unpadded should not have padding", () => {

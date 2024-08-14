@@ -333,7 +333,7 @@ describe("MatrixClient room timelines", function () {
                 name: userName,
                 url: "mxc://some/url",
             });
-            oldMshipEvent.unsigned!.prev_content = {
+            oldMshipEvent.prev_content = {
                 displayname: "Old Alice",
                 avatar_url: undefined,
                 membership: KnownMembership.Join,

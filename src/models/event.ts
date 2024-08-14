@@ -43,6 +43,7 @@ import { MatrixError } from "../http-api";
 import { TypedEventEmitter } from "./typed-event-emitter";
 import { EventStatus } from "./event-status";
 import { CryptoBackend, DecryptionError } from "../common-crypto/CryptoBackend";
+import { WITHHELD_MESSAGES } from "../crypto/OlmDevice";
 import { IAnnotatedPushRule } from "../@types/PushRules";
 import { Room } from "./room";
 import { EventTimeline } from "./event-timeline";
@@ -76,6 +77,7 @@ export interface IUnsigned {
     "invite_room_state"?: StrippedState[];
     "m.relations"?: Record<RelationType | string, any>; // No common pattern for aggregated relations
     [UNSIGNED_THREAD_ID_FIELD.name]?: string;
+    [UNSIGNED_MEMBERSHIP_FIELD.name]?: Membership | string;
 }
 
 export interface IThreadBundledRelationship {
@@ -96,6 +98,19 @@ export interface IEvent {
     membership?: Membership;
     unsigned: IUnsigned;
     redacts?: string;
+
+    /**
+     * @deprecated in favour of `sender`
+     */
+    user_id?: string;
+    /**
+     * @deprecated in favour of `unsigned.prev_content`
+     */
+    prev_content?: IContent;
+    /**
+     * @deprecated in favour of `origin_server_ts`
+     */
+    age?: number;
 }
 
 export interface IAggregatedRelation {
@@ -311,6 +326,12 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
     private thread?: Thread;
     private threadId?: string;
 
+    /*
+     * True if this event is an encrypted event which we failed to decrypt, the receiver's device is unverified and
+     * the sender has disabled encrypting to unverified devices.
+     */
+    private encryptedDisabledForUnverifiedDevices = false;
+
     /* Set an approximate timestamp for the event relative the local clock.
      * This will inherently be approximate because it doesn't take into account
      * the time between the server putting the 'age' field on the event as it sent
@@ -404,7 +425,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
         // The fallback in these cases will be to use the origin_server_ts.
         // For EDUs, the origin_server_ts also is not defined so we use Date.now().
         const age = this.getAge();
-        this.localTimestamp = age !== undefined ? Date.now() - age : (this.getTs() ?? Date.now());
+        this.localTimestamp = age !== undefined ? Date.now() - age : this.getTs() ?? Date.now();
         this.reEmitter = new TypedReEmitter(this);
     }
 
@@ -474,7 +495,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
      * @returns The user ID, e.g. `@alice:matrix.org`
      */
     public getSender(): string | undefined {
-        return this.event.sender; // v2 / v1
+        return this.event.sender || this.event.user_id; // v2 / v1
     }
 
     /**
@@ -648,7 +669,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
      */
     public getPrevContent(): IContent {
         // v2 then v1 then default
-        return this.getUnsigned().prev_content || {};
+        return this.getUnsigned().prev_content || this.event.prev_content || {};
     }
 
     /**
@@ -672,7 +693,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
      * @returns The age of this event in milliseconds.
      */
     public getAge(): number | undefined {
-        return this.getUnsigned().age;
+        return this.getUnsigned().age || this.event.age; // v2 / v1
     }
 
     /**
@@ -709,9 +730,13 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
      * @returns The user's room membership, or `undefined` if the server does
      *   not report it.
      */
-    public getMembershipAtEvent(): Optional<Membership | string> {
+    public getMembershipAtEvent(): Membership | string | undefined {
         const unsigned = this.getUnsigned();
-        return UNSIGNED_MEMBERSHIP_FIELD.findIn<Membership | string>(unsigned);
+        if (typeof unsigned[UNSIGNED_MEMBERSHIP_FIELD.name] === "string") {
+            return unsigned[UNSIGNED_MEMBERSHIP_FIELD.name];
+        } else {
+            return undefined;
+        }
     }
 
     /**
@@ -780,14 +805,12 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
         return this._decryptionFailureReason;
     }
 
-    /**
+    /*
      * True if this event is an encrypted event which we failed to decrypt, the receiver's device is unverified and
      * the sender has disabled encrypting to unverified devices.
-     *
-     * @deprecated: Prefer `event.decryptionFailureReason === DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE`.
      */
     public get isEncryptedDisabledForUnverifiedDevices(): boolean {
-        return this.decryptionFailureReason === DecryptionFailureCode.MEGOLM_KEY_WITHHELD_FOR_UNVERIFIED_DEVICE;
+        return this.isDecryptionFailure() && this.encryptedDisabledForUnverifiedDevices;
     }
 
     public shouldAttemptDecryption(): boolean {
@@ -977,6 +1000,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
         this.claimedEd25519Key = decryptionResult.claimedEd25519Key ?? null;
         this.forwardingCurve25519KeyChain = decryptionResult.forwardingCurve25519KeyChain || [];
         this.untrusted = decryptionResult.untrusted || false;
+        this.encryptedDisabledForUnverifiedDevices = false;
         this.invalidateExtensibleEvent();
     }
 
@@ -997,6 +1021,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
         this.claimedEd25519Key = null;
         this.forwardingCurve25519KeyChain = [];
         this.untrusted = false;
+        this.encryptedDisabledForUnverifiedDevices = reason === `DecryptionError: ${WITHHELD_MESSAGES["m.unverified"]}`;
         this.invalidateExtensibleEvent();
     }
 
@@ -1059,7 +1084,7 @@ export class MatrixEvent extends TypedEventEmitter<MatrixEventEmittedEvents, Mat
      * signing the public curve25519 key with the ed25519 key.
      *
      * In general, applications should not use this method directly, but should
-     * instead use {@link Crypto.CryptoApi#getEncryptionInfoForEvent}.
+     * instead use {@link CryptoApi#getEncryptionInfoForEvent}.
      */
     public getClaimedEd25519Key(): string | null {
         return this.claimedEd25519Key;

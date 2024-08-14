@@ -49,22 +49,6 @@ module.exports = {
             },
         ],
 
-        "no-restricted-properties": [
-            "error",
-            {
-                object: "window",
-                property: "setImmediate",
-                message: "Use setTimeout instead.",
-            },
-        ],
-        "no-restricted-globals": [
-            "error",
-            {
-                name: "setImmediate",
-                message: "Use setTimeout instead.",
-            },
-        ],
-
         "import/no-restricted-paths": [
             "error",
             {

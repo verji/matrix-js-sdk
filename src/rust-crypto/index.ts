@@ -64,20 +64,12 @@ export async function initRustCrypto(args: {
     storePrefix: string | null;
 
     /**
-     * A passphrase to use to encrypt the indexeddb created by rust-crypto.
+     * A passphrase to use to encrypt the indexeddbs created by rust-crypto.
      *
-     * Ignored if `storePrefix` is null, or `storeKey` is set.  If neither this nor `storeKey` is set
-     * (and `storePrefix` is not null), the indexeddb will be unencrypted.
+     * Ignored if `storePrefix` is null. If this is `undefined` (and `storePrefix` is not null), the indexeddbs
+     * will be unencrypted.
      */
     storePassphrase?: string;
-
-    /**
-     * A key to use to encrypt the indexeddb created by rust-crypto.
-     *
-     * Ignored if `storePrefix` is null. Otherwise, if it is set, it must be a 32-byte cryptographic key, which
-     * will be used to encrypt the indexeddb. See also `storePassphrase`.
-     */
-    storeKey?: Uint8Array;
 
     /** If defined, we will check if any data needs migrating from this store to the rust store. */
     legacyCryptoStore?: CryptoStore;
@@ -102,16 +94,10 @@ export async function initRustCrypto(args: {
     new RustSdkCryptoJs.Tracing(RustSdkCryptoJs.LoggerLevel.Debug).turnOn();
 
     logger.debug("Opening Rust CryptoStore");
-    let storeHandle;
-    if (args.storePrefix) {
-        if (args.storeKey) {
-            storeHandle = await StoreHandle.openWithKey(args.storePrefix, args.storeKey);
-        } else {
-            storeHandle = await StoreHandle.open(args.storePrefix, args.storePassphrase);
-        }
-    } else {
-        storeHandle = await StoreHandle.open();
-    }
+    const storeHandle: StoreHandle = await StoreHandle.open(
+        args.storePrefix ?? undefined,
+        (args.storePrefix && args.storePassphrase) ?? undefined,
+    );
 
     if (args.legacyCryptoStore) {
         // We have a legacy crypto store, which we may need to migrate from.
@@ -173,9 +159,6 @@ async function initOlmMachine(
 
     await olmMachine.registerRoomKeyUpdatedCallback((sessions: RustSdkCryptoJs.RoomKeyInfo[]) =>
         rustCrypto.onRoomKeysUpdated(sessions),
-    );
-    await olmMachine.registerRoomKeysWithheldCallback((withheld: RustSdkCryptoJs.RoomKeyWithheldInfo[]) =>
-        rustCrypto.onRoomKeysWithheld(withheld),
     );
     await olmMachine.registerUserIdentityUpdatedCallback((userId: RustSdkCryptoJs.UserId) =>
         rustCrypto.onUserIdentityUpdated(userId),

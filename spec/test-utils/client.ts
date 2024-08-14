@@ -88,6 +88,6 @@ export const mockClientMethodsEvents = () => ({
 export const mockClientMethodsServer = (): Partial<Record<MethodLikeKeys<MatrixClient>, unknown>> => ({
     getIdentityServerUrl: jest.fn(),
     getHomeserverUrl: jest.fn(),
-    getCachedCapabilities: jest.fn().mockReturnValue({}),
+    getCapabilities: jest.fn().mockReturnValue({}),
     doesServerSupportUnstableFeature: jest.fn().mockResolvedValue(false),
 });

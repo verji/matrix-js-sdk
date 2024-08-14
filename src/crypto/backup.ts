@@ -38,6 +38,7 @@ import {
 } from "./keybackup";
 import { UnstableValue } from "../NamespacedValue";
 import { CryptoEvent } from "./index";
+import { crypto } from "./crypto";
 import { ClientPrefix, HTTPError, MatrixError, Method } from "../http-api";
 import { BackupTrustInfo } from "../crypto-api/keybackup";
 import { BackupDecryptor } from "../common-crypto/CryptoBackend";
@@ -763,7 +764,7 @@ export class Curve25519 implements BackupAlgorithm {
 
 function randomBytes(size: number): Uint8Array {
     const buf = new Uint8Array(size);
-    globalThis.crypto.getRandomValues(buf);
+    crypto.getRandomValues(buf);
     return buf;
 }
 

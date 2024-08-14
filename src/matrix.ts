@@ -24,7 +24,6 @@ import { RoomWidgetClient, ICapabilities } from "./embedded";
 import { CryptoStore } from "./crypto/store/base";
 
 export * from "./client";
-export * from "./serverCapabilities";
 export * from "./embedded";
 export * from "./http-api";
 export * from "./autodiscovery";
@@ -114,6 +113,20 @@ export { LocationAssetType } from "./@types/location";
  * {@link MatrixClient.getCrypto}.
  */
 export * as Crypto from "./crypto-api";
+
+/**
+ * Backwards compatibility re-export
+ * @internal
+ * @deprecated use {@link Crypto.CryptoApi}
+ */
+export type { CryptoApi } from "./crypto-api";
+
+/**
+ * Backwards compatibility re-export
+ * @internal
+ * @deprecated use {@link Crypto.DeviceVerificationStatus}
+ */
+export { DeviceVerificationStatus } from "./crypto-api";
 
 let cryptoStoreFactory = (): CryptoStore => new MemoryCryptoStore();
 

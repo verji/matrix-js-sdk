@@ -17,12 +17,7 @@ limitations under the License.
 import MockHttpBackend from "matrix-mock-request";
 
 import "../../olm-loader";
-import {
-    MSC3906Rendezvous,
-    RendezvousCode,
-    LegacyRendezvousFailureReason as RendezvousFailureReason,
-    RendezvousIntent,
-} from "../../../src/rendezvous";
+import { MSC3906Rendezvous, RendezvousCode, RendezvousFailureReason, RendezvousIntent } from "../../../src/rendezvous";
 import {
     ECDHv2RendezvousCode as ECDHRendezvousCode,
     MSC3903ECDHPayload,
@@ -116,7 +111,7 @@ function makeMockClient(opts: {
                     },
                 };
             },
-            getCachedCapabilities() {
+            getCapabilities() {
                 return opts.msc3882r0Only
                     ? {}
                     : {

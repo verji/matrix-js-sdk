@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import fetchMock from "fetch-mock-jest";
+import { MockOptionsMethodPut } from "fetch-mock";
 
 import { ISyncResponder } from "./SyncResponder";
 
@@ -39,10 +40,7 @@ export class AccountDataAccumulator {
      * @param opts - options to pass to fetchMock
      * @returns a Promise which will resolve (with the content of the account data) once it is set.
      */
-    public interceptSetAccountData(
-        accountDataType: string,
-        opts?: Parameters<(typeof fetchMock)["put"]>[2],
-    ): Promise<any> {
+    public interceptSetAccountData(accountDataType: string, opts?: MockOptionsMethodPut): Promise<any> {
         return new Promise((resolve) => {
             // Called when the cross signing key is uploaded
             fetchMock.put(
