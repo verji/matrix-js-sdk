@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { OidcClientConfig } from ".";
-import { OidcError } from "./error";
-import { Method } from "../http-api";
-import { logger } from "../logger";
-import { NonEmptyArray } from "../@types/common";
+import { OidcClientConfig } from "./index.ts";
+import { OidcError } from "./error.ts";
+import { Method } from "../http-api/index.ts";
+import { logger } from "../logger.ts";
+import { NonEmptyArray } from "../@types/common.ts";
 
 /**
  * Client metadata passed to registration endpoint
@@ -48,6 +48,8 @@ interface OidcRegistrationRequestBody {
     token_endpoint_auth_method: string;
     application_type: "web" | "native";
 }
+
+export const DEVICE_CODE_SCOPE = "urn:ietf:params:oauth:grant-type:device_code";
 
 /**
  * Attempts dynamic registration against the configured registration endpoint
