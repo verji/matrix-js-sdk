@@ -8549,9 +8549,13 @@ export class MatrixClient extends TypedEventEmitter<EmittedEvents, ClientEventHa
      * @param extraOptions - Additional request options.
      * @returns Promise which resolves to an array of results.
      */
-    public searchUserDirectory({ term, limit }: { term: string; limit?: number }, extraBodyArgs: {[key: string]: string}|null = {}, extraOptions: IRequestOpts = {}): Promise<IUserDirectoryResponse> {
+    public searchUserDirectory(
+        { term, limit }: { term: string; limit?: number },
+        extraBodyArgs: { [key: string]: string } | null = {},
+        extraOptions: IRequestOpts = {},
+    ): Promise<IUserDirectoryResponse> {
         const body: Body = {
-            search_term: term, 
+            search_term: term,
             ...extraBodyArgs,
         };
 

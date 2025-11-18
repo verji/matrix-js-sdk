@@ -3408,8 +3408,8 @@ export class Room extends ReadReceipt<RoomEmittedEvents, RoomEventHandlerMap> {
             // Check if this room is a DM by looking in account data
             const mDirectEvent = this.client.getAccountData("m.direct");
             const mDirectContent = mDirectEvent?.getContent() ?? {};
-          // Get Display Names room 
-            // 
+            // Get Display Names room
+            //
             // Check if this roomId exists in any of the DM arrays
             const isDmRoom = Object.values(mDirectContent).some((roomIds: any) => {
                 return Array.isArray(roomIds) && roomIds.includes(this.roomId);
@@ -3423,9 +3423,8 @@ export class Room extends ReadReceipt<RoomEmittedEvents, RoomEventHandlerMap> {
                     if (inviterUserId) {
                         // Try to get display name from room member, fall back to user ID
                         const inviterMember = this.getMember(inviterUserId);
-                        const inviterName = inviterMember?.name && inviterMember.name.trim()
-                            ? inviterMember.name
-                            : inviterUserId;
+                        const inviterName =
+                            inviterMember?.name && inviterMember.name.trim() ? inviterMember.name : inviterUserId;
 
                         return this.roomNameGenerator({
                             type: RoomNameType.Generated,
@@ -3436,7 +3435,7 @@ export class Room extends ReadReceipt<RoomEmittedEvents, RoomEventHandlerMap> {
                 }
             }
         }
-        // END VERJI:special handling for DM invitations 
+        // END VERJI:special handling for DM invitations
 
         const joinedMemberCount = this.currentState.getJoinedMemberCount();
         const invitedMemberCount = this.currentState.getInvitedMemberCount();
