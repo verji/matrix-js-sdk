@@ -8543,15 +8543,21 @@ export class MatrixClient extends TypedEventEmitter<EmittedEvents, ClientEventHa
 
     /**
      * Query the user directory with a term matching user IDs, display names and domains.
-     * @param options
-     * @param options.term - the term with which to search.
-     * @param options.limit - the maximum number of results to return. The server will apply a limit if unspecified.
-     * @returns Promise which resolves: an array of results.
+     * @param options - Search options.
+     * @param options.term - The term with which to search.
+     * @param options.limit - Maximum number of results to return.
+     * @param extraBodyArgs - Additional POST body fields.
+     * @param extraOptions - Additional request options.
+     * @returns Promise resolving to an array of results.
      */
-    public searchUserDirectory({ term, limit }: { term: string; limit?: number }, extraBodyArgs: {[key:string]: string}|null = {}, extraOptions: IRequestOpts = {}): Promise<IUserDirectoryResponse> {
+    public searchUserDirectory(
+        { term, limit }: { term: string; limit?: number },
+        extraBodyArgs: { [key: string]: string } | null = {},
+        extraOptions: IRequestOpts = {},
+    ): Promise<IUserDirectoryResponse> {
         const body: Body = {
-            search_term: term, 
-            ...extraBodyArgs
+            search_term: term,
+            ...extraBodyArgs,
         };
 
         if (limit !== undefined) {
