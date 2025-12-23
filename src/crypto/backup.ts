@@ -284,14 +284,16 @@ export class BackupManager {
 
         // Enable backup if either usable (verified signatures) OR trusted_locally (has private key)
         const shouldEnable = trustInfo.usable || trustInfo.trusted_locally;
-        logger.log(`[VERJI] Enabling key backup if minimumally trusted locally. shouldEnable: ${shouldEnable}, usable: ${trustInfo.usable}, trusted_locally: ${trustInfo.trusted_locally}`);
+        logger.log(
+            `[VERJI] Enabling key backup if minimumally trusted locally. shouldEnable: ${shouldEnable}, usable: ${trustInfo.usable}, trusted_locally: ${trustInfo.trusted_locally}`,
+        );
 
         if (shouldEnable && !this.backupInfo) {
             if (!trustInfo.usable && trustInfo.trusted_locally) {
                 logger.warn(
                     `[VERJI] Enabling key backup v${backupInfo!.version} based on local trust only. ` +
-                    `Backup cannot be verified as created by a trusted device (signatures from unknown/deleted devices), ` +
-                    `but we have the correct private key to decrypt it.`
+                        `Backup cannot be verified as created by a trusted device (signatures from unknown/deleted devices), ` +
+                        `but we have the correct private key to decrypt it.`,
                 );
             } else {
                 logger.log(`Found usable key backup v${backupInfo!.version}: enabling key backups`);
