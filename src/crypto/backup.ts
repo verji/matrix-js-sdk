@@ -176,7 +176,6 @@ export class BackupManager {
         }
 
         this.algorithm = await BackupManager.makeAlgorithm(info, this.getKey);
-
         this.baseApis.emit(CryptoEvent.KeyBackupStatus, true);
 
         // There may be keys left over from a partially completed backup, so
@@ -194,7 +193,6 @@ export class BackupManager {
         this.algorithm = undefined;
 
         this.backupInfo = undefined;
-
         this.baseApis.emit(CryptoEvent.KeyBackupStatus, false);
     }
 
@@ -284,15 +282,27 @@ export class BackupManager {
 
         const trustInfo = await this.isKeyBackupTrusted(backupInfo);
 
-        if (trustInfo.usable && !this.backupInfo) {
-            logger.log(`Found usable key backup v${backupInfo!.version}: enabling key backups`);
+        // Enable backup if either usable (verified signatures) OR trusted_locally (has private key)
+        const shouldEnable = trustInfo.usable || trustInfo.trusted_locally;
+        logger.log(`[VERJI] Enabling key backup if minimumally trusted locally. shouldEnable: ${shouldEnable}, usable: ${trustInfo.usable}, trusted_locally: ${trustInfo.trusted_locally}`);
+
+        if (shouldEnable && !this.backupInfo) {
+            if (!trustInfo.usable && trustInfo.trusted_locally) {
+                logger.warn(
+                    `[VERJI] Enabling key backup v${backupInfo!.version} based on local trust only. ` +
+                    `Backup cannot be verified as created by a trusted device (signatures from unknown/deleted devices), ` +
+                    `but we have the correct private key to decrypt it.`
+                );
+            } else {
+                logger.log(`Found usable key backup v${backupInfo!.version}: enabling key backups`);
+            }
             await this.enableKeyBackup(backupInfo!);
-        } else if (!trustInfo.usable && this.backupInfo) {
-            logger.log("No usable key backup: disabling key backup");
+        } else if (!shouldEnable && this.backupInfo) {
+            logger.log("No usable or locally-trusted key backup: disabling key backup");
             this.disableKeyBackup();
-        } else if (!trustInfo.usable && !this.backupInfo) {
-            logger.log("No usable key backup: not enabling key backup");
-        } else if (trustInfo.usable && this.backupInfo) {
+        } else if (!shouldEnable && !this.backupInfo) {
+            logger.log("No usable or locally-trusted key backup: not enabling key backup");
+        } else if (shouldEnable && this.backupInfo) {
             // may not be the same version: if not, we should switch
             if (backupInfo!.version !== this.backupInfo.version) {
                 logger.log(
@@ -388,7 +398,6 @@ export class BackupManager {
         }
 
         const mySigs = backupInfo.auth_data.signatures[userId] || {};
-
         for (const keyId of Object.keys(mySigs)) {
             const keyIdParts = keyId.split(":");
             if (keyIdParts[0] !== "ed25519") {
@@ -586,7 +595,6 @@ export class BackupManager {
         await this.baseApis.crypto!.cryptoStore.unmarkSessionsNeedingBackup(sessions);
         remaining = await this.baseApis.crypto!.cryptoStore.countSessionsNeedingBackup();
         this.baseApis.crypto!.emit(CryptoEvent.KeyBackupSessionsRemaining, remaining);
-
         return sessions.length;
     }
 
