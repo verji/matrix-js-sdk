@@ -284,6 +284,57 @@ export class BackupManager {
 
         const trustInfo = await this.isKeyBackupTrusted(backupInfo);
 
+        // Automatic re-signing: If backup is not usable but we have cross-signing, try to fix it
+        if (!trustInfo.usable && backupInfo && this.baseApis.crypto!.crossSigningInfo.getId()) {
+            logger.log(
+                `[VERJI.BACKUP.RESIGN] Backup v${backupInfo.version} is not usable ` +
+                `(trusted_locally: ${trustInfo.trusted_locally}). Attempting automatic re-signing with cross-signing master key.`
+            );
+
+            try {
+                // Sign the backup auth_data with cross-signing master key
+                await this.baseApis.crypto!.crossSigningInfo.signObject(backupInfo.auth_data, "master");
+
+                // Upload the re-signed metadata to server
+                await this.baseApis.http.authedRequest(
+                    Method.Put,
+                    `/room_keys/version/${backupInfo.version}`,
+                    undefined,
+                    {
+                        algorithm: backupInfo.algorithm,
+                        auth_data: backupInfo.auth_data,
+                    },
+                    { prefix: ClientPrefix.V3 },
+                );
+
+                logger.log(
+                    `[VERJI.BACKUP.RESIGN] Successfully re-signed and uploaded backup v${backupInfo.version}. ` +
+                    `Re-checking trust status...`
+                );
+
+                // Re-check trust after re-signing (update trustInfo for the logic below)
+                const updatedTrustInfo = await this.isKeyBackupTrusted(backupInfo);
+                if (updatedTrustInfo.usable) {
+                    logger.log(
+                        `[VERJI.BACKUP.RESIGN] Backup v${backupInfo.version} is now USABLE ✓ after re-signing.`
+                    );
+                    // Update trustInfo so the enable logic below works
+                    Object.assign(trustInfo, updatedTrustInfo);
+                } else {
+                    logger.warn(
+                        `[VERJI.BACKUP.RESIGN] Backup v${backupInfo.version} is still not usable after re-signing. ` +
+                        `This is unexpected.`
+                    );
+                }
+            } catch (error) {
+                logger.error(
+                    `[VERJI.BACKUP.RESIGN] Failed to automatically re-sign backup v${backupInfo.version}:`,
+                    error
+                );
+                // Continue with original trustInfo - will follow normal enable/disable logic
+            }
+        }
+
         if (trustInfo.usable && !this.backupInfo) {
             logger.log(`Found usable key backup v${backupInfo!.version}: enabling key backups`);
             await this.enableKeyBackup(backupInfo!);

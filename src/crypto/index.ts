@@ -865,12 +865,6 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
             const device = this.deviceList.getStoredDevice(this.userId, this.deviceId)!;
             const deviceSignature = await crossSigningInfo.signDevice(this.userId, device);
             builder.addKeySignature(this.userId, this.deviceId, deviceSignature!);
-
-            // Sign message key backup with cross-signing master key
-            if (this.backupManager.backupInfo) {
-                await crossSigningInfo.signObject(this.backupManager.backupInfo.auth_data, "master");
-                builder.addSessionBackup(this.backupManager.backupInfo);
-            }
         };
 
         const publicKeysOnDevice = this.crossSigningInfo.getId();
@@ -906,6 +900,33 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
             await this.checkOwnCrossSigningTrust({
                 allowPrivateKeyRequests: true,
             });
+        }
+
+        // Sign message key backup with cross-signing master key (if backup exists and is not usable)
+        // This runs for ALL bootstrap paths to ensure broken backups get fixed
+        if (this.backupManager.backupInfo && crossSigningInfo.getId()) {
+            const backupVersion = this.backupManager.backupInfo.version;
+            const trustInfo = await this.backupManager.isKeyBackupTrusted(this.backupManager.backupInfo);
+
+            // Only re-sign if backup is not currently usable (missing/invalid cross-signing signature)
+            if (!trustInfo.usable) {
+                logger.log(
+                    `[VERJI.BACKUP.RESIGN] Detected existing key backup v${backupVersion} that is NOT usable ` +
+                    `(trusted_locally: ${trustInfo.trusted_locally}). Re-signing with cross-signing master key.`
+                );
+
+                await crossSigningInfo.signObject(this.backupManager.backupInfo.auth_data, "master");
+                builder.addSessionBackup(this.backupManager.backupInfo);
+
+                logger.log(
+                    `[VERJI.BACKUP.RESIGN] Successfully signed backup v${backupVersion} with cross-signing key. ` +
+                    `Signature will be uploaded to server. Backup should become usable.`
+                );
+            } else {
+                logger.log(
+                    `[VERJI.BACKUP.RESIGN] Backup v${backupVersion} is already usable. Skipping re-signing.`
+                );
+            }
         }
 
         // Assuming no app-supplied callback, default to storing new private keys in
