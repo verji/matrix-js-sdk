@@ -912,7 +912,7 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
             if (!trustInfo.usable) {
                 logger.log(
                     `[VERJI.BACKUP.RESIGN] Detected existing key backup v${backupVersion} that is NOT usable ` +
-                    `(trusted_locally: ${trustInfo.trusted_locally}). Re-signing with cross-signing master key.`
+                        `(trusted_locally: ${trustInfo.trusted_locally}). Re-signing with cross-signing master key.`,
                 );
 
                 await crossSigningInfo.signObject(this.backupManager.backupInfo.auth_data, "master");
@@ -920,12 +920,10 @@ export class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap
 
                 logger.log(
                     `[VERJI.BACKUP.RESIGN] Successfully signed backup v${backupVersion} with cross-signing key. ` +
-                    `Signature will be uploaded to server. Backup should become usable.`
+                        `Signature will be uploaded to server. Backup should become usable.`,
                 );
             } else {
-                logger.log(
-                    `[VERJI.BACKUP.RESIGN] Backup v${backupVersion} is already usable. Skipping re-signing.`
-                );
+                logger.log(`[VERJI.BACKUP.RESIGN] Backup v${backupVersion} is already usable. Skipping re-signing.`);
             }
         }
 

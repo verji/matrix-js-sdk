@@ -207,7 +207,7 @@ export class EncryptionSetupOperation {
                 // be trusted via cross-signing.
                 logger.log(
                     `[VERJI.BACKUP.RESIGN] Uploading re-signed backup metadata to server ` +
-                    `(version ${this.keyBackupInfo.version})...`
+                        `(version ${this.keyBackupInfo.version})...`,
                 );
 
                 await baseApis.http.authedRequest(
@@ -223,7 +223,7 @@ export class EncryptionSetupOperation {
 
                 logger.log(
                     `[VERJI.BACKUP.RESIGN] Successfully uploaded re-signed backup v${this.keyBackupInfo.version}. ` +
-                    `Backup now has cross-signing signature and should become usable.`
+                        `Backup now has cross-signing signature and should become usable.`,
                 );
             } else {
                 // add new key backup
@@ -232,15 +232,13 @@ export class EncryptionSetupOperation {
                 });
             }
             // tell the backup manager to re-check the keys now that they have been (maybe) updated
-            logger.log(
-                `[VERJI.BACKUP.RESIGN] Triggering backup verification to check if backup is now usable...`
-            );
+            logger.log(`[VERJI.BACKUP.RESIGN] Triggering backup verification to check if backup is now usable...`);
             const checkResult = await crypto.backupManager.checkKeyBackup();
 
             if (checkResult) {
                 logger.log(
                     `[VERJI.BACKUP.RESIGN] Backup verification complete. ` +
-                    `Backup v${checkResult.backupInfo?.version} is now ${checkResult.trustInfo?.usable ? 'USABLE ✓' : 'NOT USABLE ✗'}`
+                        `Backup v${checkResult.backupInfo?.version} is now ${checkResult.trustInfo?.usable ? "USABLE ✓" : "NOT USABLE ✗"}`,
                 );
             }
         }

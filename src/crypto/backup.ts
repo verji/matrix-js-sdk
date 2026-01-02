@@ -288,7 +288,7 @@ export class BackupManager {
         if (!trustInfo.usable && backupInfo && this.baseApis.crypto!.crossSigningInfo.getId()) {
             logger.log(
                 `[VERJI.BACKUP.RESIGN] Backup v${backupInfo.version} is not usable ` +
-                `(trusted_locally: ${trustInfo.trusted_locally}). Attempting automatic re-signing with cross-signing master key.`
+                    `(trusted_locally: ${trustInfo.trusted_locally}). Attempting automatic re-signing with cross-signing master key.`,
             );
 
             try {
@@ -309,27 +309,25 @@ export class BackupManager {
 
                 logger.log(
                     `[VERJI.BACKUP.RESIGN] Successfully re-signed and uploaded backup v${backupInfo.version}. ` +
-                    `Re-checking trust status...`
+                        `Re-checking trust status...`,
                 );
 
                 // Re-check trust after re-signing (update trustInfo for the logic below)
                 const updatedTrustInfo = await this.isKeyBackupTrusted(backupInfo);
                 if (updatedTrustInfo.usable) {
-                    logger.log(
-                        `[VERJI.BACKUP.RESIGN] Backup v${backupInfo.version} is now USABLE ✓ after re-signing.`
-                    );
+                    logger.log(`[VERJI.BACKUP.RESIGN] Backup v${backupInfo.version} is now USABLE ✓ after re-signing.`);
                     // Update trustInfo so the enable logic below works
                     Object.assign(trustInfo, updatedTrustInfo);
                 } else {
                     logger.warn(
                         `[VERJI.BACKUP.RESIGN] Backup v${backupInfo.version} is still not usable after re-signing. ` +
-                        `This is unexpected.`
+                            `This is unexpected.`,
                     );
                 }
             } catch (error) {
                 logger.error(
                     `[VERJI.BACKUP.RESIGN] Failed to automatically re-sign backup v${backupInfo.version}:`,
-                    error
+                    error,
                 );
                 // Continue with original trustInfo - will follow normal enable/disable logic
             }
