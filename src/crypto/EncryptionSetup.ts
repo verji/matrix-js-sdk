@@ -205,6 +205,11 @@ export class EncryptionSetupOperation {
                 // The backup is trusted because the user provided the private key.
                 // Sign the backup with the cross signing key so the key backup can
                 // be trusted via cross-signing.
+                logger.log(
+                    `[VERJI.BACKUP.RESIGN] Uploading re-signed backup metadata to server ` +
+                        `(version ${this.keyBackupInfo.version})...`,
+                );
+
                 await baseApis.http.authedRequest(
                     Method.Put,
                     "/room_keys/version/" + this.keyBackupInfo.version,
@@ -215,6 +220,11 @@ export class EncryptionSetupOperation {
                     },
                     { prefix: ClientPrefix.V3 },
                 );
+
+                logger.log(
+                    `[VERJI.BACKUP.RESIGN] Successfully uploaded re-signed backup v${this.keyBackupInfo.version}. ` +
+                        `Backup now has cross-signing signature and should become usable.`,
+                );
             } else {
                 // add new key backup
                 await baseApis.http.authedRequest(Method.Post, "/room_keys/version", undefined, this.keyBackupInfo, {
@@ -222,7 +232,15 @@ export class EncryptionSetupOperation {
                 });
             }
             // tell the backup manager to re-check the keys now that they have been (maybe) updated
-            await crypto.backupManager.checkKeyBackup();
+            logger.log(`[VERJI.BACKUP.RESIGN] Triggering backup verification to check if backup is now usable...`);
+            const checkResult = await crypto.backupManager.checkKeyBackup();
+
+            if (checkResult) {
+                logger.log(
+                    `[VERJI.BACKUP.RESIGN] Backup verification complete. ` +
+                        `Backup v${checkResult.backupInfo?.version} is now ${checkResult.trustInfo?.usable ? "USABLE ✓" : "NOT USABLE ✗"}`,
+                );
+            }
         }
     }
 }
