@@ -3347,7 +3347,8 @@ export class Room extends ReadReceipt<RoomEmittedEvents, RoomEventHandlerMap> {
 
     private roomNameGenerator(state: RoomNameState): string {
         if (this.client.roomNameGenerator) {
-            const name = this.client.roomNameGenerator(this.roomId, state);
+            // VERJI: pass the room itself; see `roomNameGenerator` in ICreateClientOpts
+            const name = this.client.roomNameGenerator(this.roomId, state, this);
             if (name !== null) {
                 return name;
             }

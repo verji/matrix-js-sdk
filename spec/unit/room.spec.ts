@@ -3496,6 +3496,14 @@ describe("Room", function () {
             room.recalculate();
             expect(client.roomNameGenerator).toHaveBeenCalled();
         });
+
+        // VERJI: the generator is handed the room, which isn't in the store yet while sync names it
+        it("should pass the room being named", () => {
+            (client.roomNameGenerator as jest.Mock).mockClear();
+            room.recalculate();
+            expect(client.getRoom(roomId)).toBeNull();
+            expect(client.roomNameGenerator).toHaveBeenCalledWith(roomId, expect.anything(), room);
+        });
     });
 
     describe("thread notifications", () => {

@@ -416,8 +416,11 @@ export interface ICreateClientOpts {
     /**
      * Method to generate room names for empty rooms and rooms names based on membership.
      * Defaults to a built-in English handler with basic pluralisation.
+     *
+     * VERJI: `room` is the room being named, so the handler can read its state. During sync a new room is named
+     * before it is put in the store, so `client.getRoom(roomId)` can't stand in for it.
      */
-    roomNameGenerator?: (roomId: string, state: RoomNameState) => string | null;
+    roomNameGenerator?: (roomId: string, state: RoomNameState, room?: Room) => string | null;
 
     /**
      * If true, participant can join group call without video and audio this has to be allowed. By default, a local
